@@ -17,6 +17,7 @@ public class VolleyballGameManager {
 
     private final Map<UUID, VolleyballGame> games = new HashMap<>();
     private final Map<BlockPos, UUID> poleToCourtId = new HashMap<>();
+    private final Map<UUID, ServerLevel> courtLevels = new HashMap<>();
 
     private VolleyballGameManager() {}
 
@@ -36,6 +37,7 @@ public class VolleyballGameManager {
     public void removeCourt(BlockPos polePos) {
         UUID courtId = poleToCourtId.remove(polePos);
         if (courtId != null) {
+            courtLevels.remove(courtId);
             games.remove(courtId);
             poleToCourtId.values().removeIf(id -> id.equals(courtId));
         }
@@ -52,6 +54,7 @@ public class VolleyballGameManager {
     public void addPlayerToCourt(UUID courtId, ServerPlayer player) {
         VolleyballGame game = games.get(courtId);
         if (game != null) {
+            courtLevels.put(courtId, player.serverLevel());
             game.addPlayer(player);
             syncGameState(player.serverLevel(), courtId);
         }
@@ -65,17 +68,46 @@ public class VolleyballGameManager {
 
     public void onBallHitGround(UUID courtId, int lastHitTeam, Vec3 pos) {
         VolleyballGame game = games.get(courtId);
-        if (game != null) game.onBallHitGround(lastHitTeam, pos);
+        if (game == null) return;
+        int s0before = game.getTeam(0).getScore();
+        int s1before = game.getTeam(1).getScore();
+        game.onBallHitGround(lastHitTeam, pos);
+        int s0after = game.getTeam(0).getScore();
+        int s1after = game.getTeam(1).getScore();
+        if (s0after != s0before || s1after != s1before) {
+            ServerLevel level = courtLevels.get(courtId);
+            if (level != null) {
+                broadcastToGame(courtId, level, "[VolleyCraft] Score: " + s0after + " - " + s1after
+                    + (game.getPhase() == GamePhase.GAME_OVER
+                       ? " | Game over! Team " + (s0after > s1after ? "1" : "2") + " wins!"
+                       : " | Team " + (game.getServingTeam() + 1) + " serves next"));
+                syncGameState(level, courtId);
+            }
+        }
     }
 
     public void onFault(UUID courtId, int faultingTeam) {
         VolleyballGame game = games.get(courtId);
-        if (game != null) game.onFault(faultingTeam);
+        if (game == null) return;
+        int s0before = game.getTeam(0).getScore();
+        int s1before = game.getTeam(1).getScore();
+        game.onFault(faultingTeam);
+        int s0after = game.getTeam(0).getScore();
+        int s1after = game.getTeam(1).getScore();
+        if (s0after != s0before || s1after != s1before) {
+            ServerLevel level = courtLevels.get(courtId);
+            if (level != null) {
+                broadcastToGame(courtId, level, "[VolleyCraft] Fault by Team " + (faultingTeam + 1)
+                    + "! Score: " + s0after + " - " + s1after);
+                syncGameState(level, courtId);
+            }
+        }
     }
 
     public void spawnBall(ServerLevel level, UUID courtId) {
         VolleyballGame game = games.get(courtId);
         if (game == null) return;
+        courtLevels.put(courtId, level);
         Vec3 spawn = game.getNetCenter().add(0, 3, 0);
         VolleyballEntity ball = new VolleyballEntity(level, spawn.x, spawn.y, spawn.z);
         ball.setCourtId(courtId);
@@ -119,5 +151,6 @@ public class VolleyballGameManager {
     public void reset() {
         games.clear();
         poleToCourtId.clear();
+        courtLevels.clear();
     }
 }
