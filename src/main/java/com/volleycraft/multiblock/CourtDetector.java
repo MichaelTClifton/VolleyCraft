@@ -22,11 +22,18 @@ public class CourtDetector {
         if (!poleState.is(ModBlocks.NET_POLE.get())) return;
 
         Direction poleFacing = poleState.getValue(BlockStateProperties.HORIZONTAL_FACING);
-        // Search perpendicular to the pole's facing (along the net axis)
-        Direction searchDir = poleFacing.getClockWise();
 
-        BlockPos partner = findPartner(level, newPolePos, searchDir, poleFacing);
-        if (partner == null) partner = findPartner(level, newPolePos, searchDir.getOpposite(), poleFacing);
+        // Search all four horizontal directions so courts form regardless of
+        // whether poles are offset perpendicular to or along the facing axis.
+        BlockPos partner = null;
+        for (Direction searchDir : new Direction[]{
+                poleFacing.getClockWise(),
+                poleFacing.getCounterClockWise(),
+                poleFacing,
+                poleFacing.getOpposite()}) {
+            partner = findPartner(level, newPolePos, searchDir, poleFacing);
+            if (partner != null) break;
+        }
         if (partner == null) return;
 
         NetPoleBlockEntity newBe = getBlockEntity(level, newPolePos);
