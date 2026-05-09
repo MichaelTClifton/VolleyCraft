@@ -52,6 +52,12 @@ public class VolleyballEntity extends Entity {
     private boolean inPlay = false;
     private int syncTimer = 0;
 
+    // Net-crossing tracking
+    private boolean netInfoInitialized = false;
+    private double netMidpoint = Double.NaN;
+    private boolean netRunsAlongZ = false;
+    private double lastBallNetCoord = Double.NaN;
+
     // Client interpolation state
     private double lerpX, lerpY, lerpZ;
     private double lerpVX, lerpVY, lerpVZ;
@@ -94,18 +100,38 @@ public class VolleyballEntity extends Entity {
         double ny = getY() + vy;
         double nz = getZ() + vz;
 
-        // Block collision check
-        BlockPos below = BlockPos.containing(getX(), getY() - 0.21, getZ());
-        BlockState blockBelow = level().getBlockState(below);
-        if (!blockBelow.isAir() && ny < below.getY() + 1.0) {
-            ny = below.getY() + 1.0;
-            if (Math.abs(vy) > MIN_SPEED_TO_BOUNCE) {
-                vy = -vy * BOUNCE_FACTOR;
-                handleBallHitGround(nx, ny, nz);
-            } else {
-                vy = 0;
-                vx *= 0.7;
-                vz *= 0.7;
+        // Block collision — check midpoint along trajectory to catch fast-moving balls
+        boolean bounced = false;
+        double[] checkYs = { getY() + vy * 0.5, ny };
+        double[] checkXs = { getX() + vx * 0.5, nx };
+        double[] checkZs = { getZ() + vz * 0.5, nz };
+        for (int ci = 0; ci < 2 && !bounced; ci++) {
+            BlockPos below = BlockPos.containing(checkXs[ci], checkYs[ci] - 0.21, checkZs[ci]);
+            BlockState blockBelow = level().getBlockState(below);
+            if (!blockBelow.isAir() && checkYs[ci] < below.getY() + 1.0) {
+                ny = below.getY() + 1.0;
+                bounced = true;
+                if (Math.abs(vy) > MIN_SPEED_TO_BOUNCE) {
+                    vy = -vy * BOUNCE_FACTOR;
+                    handleBallHitGround(nx, ny, nz);
+                } else {
+                    vy = 0;
+                    vx *= 0.7;
+                    vz *= 0.7;
+                }
+            }
+        }
+
+        // Net-crossing: reset touch counter when ball passes from one side to the other
+        if (inPlay && courtId != null) {
+            if (!netInfoInitialized) initNetInfo();
+            if (netInfoInitialized && !Double.isNaN(netMidpoint) && !Double.isNaN(lastBallNetCoord)) {
+                double newCoord = netRunsAlongZ ? nx : nz;
+                if ((lastBallNetCoord - netMidpoint) * (newCoord - netMidpoint) < 0) {
+                    // Ball just crossed the net midpoint — reset touches for new side
+                    touchesThisSide = 0;
+                }
+                lastBallNetCoord = newCoord;
             }
         }
 
@@ -170,6 +196,20 @@ public class VolleyballEntity extends Entity {
         this.lerpVY = vy;
         this.lerpVZ = vz;
         this.lerpSteps = 6; // spread correction over 6 ticks (~300ms)
+    }
+
+    private void initNetInfo() {
+        if (courtId == null) return;
+        com.volleycraft.game.VolleyballGame game =
+            com.volleycraft.game.VolleyballGameManager.getInstance().getGame(courtId);
+        if (game == null) return;
+        net.minecraft.world.phys.Vec3 center = game.getNetCenter();
+        net.minecraft.core.BlockPos p1 = game.getPole1Pos();
+        net.minecraft.core.BlockPos p2 = game.getPole2Pos();
+        netRunsAlongZ = p1.getX() != p2.getX();
+        netMidpoint = netRunsAlongZ ? center.x : center.z;
+        netInfoInitialized = true;
+        lastBallNetCoord = netRunsAlongZ ? getX() : getZ();
     }
 
     /** Called server-side when the volleyball hits the ground. */
@@ -238,6 +278,10 @@ public class VolleyballEntity extends Entity {
         if (tag.hasUUID("CourtId")) courtId = tag.getUUID("CourtId");
         lastHitTeam = tag.getInt("LastHitTeam");
         inPlay = tag.getBoolean("InPlay");
+        netMidpoint = tag.contains("NetMidpoint") ? tag.getDouble("NetMidpoint") : Double.NaN;
+        netRunsAlongZ = tag.getBoolean("NetRunsAlongZ");
+        netInfoInitialized = tag.getBoolean("NetInfoInit");
+        lastBallNetCoord = netMidpoint; // will be corrected on first tick
     }
 
     @Override
@@ -245,5 +289,8 @@ public class VolleyballEntity extends Entity {
         if (courtId != null) tag.putUUID("CourtId", courtId);
         tag.putInt("LastHitTeam", lastHitTeam);
         tag.putBoolean("InPlay", inPlay);
+        tag.putDouble("NetMidpoint", netMidpoint);
+        tag.putBoolean("NetRunsAlongZ", netRunsAlongZ);
+        tag.putBoolean("NetInfoInit", netInfoInitialized);
     }
 }
