@@ -1,0 +1,23 @@
+# Gradle build artifacts
+.gradle/
+build/
+out/
+
+# Forge generated sources
+src/generated/
+
+# IDE files
+.idea/
+*.iml
+.eclipse/
+.classpath
+.project
+*.launch
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials / local overrides
+local.properties
+gradle-local.properties
