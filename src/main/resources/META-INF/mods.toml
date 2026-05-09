@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[dependencies.volleycraft]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47.2,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.volleycraft]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
+
+[[mods]]
+    modId="volleycraft"
+    version="${file.jarVersion}"
+    displayName="VolleyCraft"
+    description='''
+        Bring volleyball to Minecraft! Place net poles, form a court, and spike the ball.
+    '''
+    logoFile="volleycraft.png"
+    authors="VolleyCraft Team"

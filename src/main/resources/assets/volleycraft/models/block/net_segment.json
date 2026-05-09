@@ -1,0 +1,17 @@
+{
+    "parent": "block/block",
+    "textures": {
+        "net": "volleycraft:block/net_segment",
+        "particle": "volleycraft:block/net_segment"
+    },
+    "elements": [
+        {
+            "from": [0, 0, 7],
+            "to":   [16, 16, 9],
+            "faces": {
+                "north": { "texture": "#net", "uv": [0, 0, 16, 16] },
+                "south": { "texture": "#net", "uv": [0, 0, 16, 16] }
+            }
+        }
+    ]
+}

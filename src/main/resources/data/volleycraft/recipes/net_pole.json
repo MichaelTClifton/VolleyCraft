@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "I",
+        "I",
+        "W"
+    ],
+    "key": {
+        "I": { "item": "minecraft:iron_ingot" },
+        "W": { "item": "minecraft:oak_planks" }
+    },
+    "result": {
+        "item": "volleycraft:net_pole",
+        "count": 2
+    }
+}

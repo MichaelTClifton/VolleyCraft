@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "volleycraft:block/net_pole" },
+        "facing=south": { "model": "volleycraft:block/net_pole", "y": 180 },
+        "facing=east":  { "model": "volleycraft:block/net_pole", "y": 90 },
+        "facing=west":  { "model": "volleycraft:block/net_pole", "y": 270 }
+    }
+}

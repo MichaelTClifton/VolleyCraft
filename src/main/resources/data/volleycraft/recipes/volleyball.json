@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " LS",
+        "LSL",
+        "SL "
+    ],
+    "key": {
+        "L": { "item": "minecraft:leather" },
+        "S": { "item": "minecraft:slime_ball" }
+    },
+    "result": {
+        "item": "volleycraft:volleyball",
+        "count": 1
+    }
+}

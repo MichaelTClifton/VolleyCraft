@@ -1,0 +1,21 @@
+{
+    "parent": "block/block",
+    "textures": {
+        "pole": "volleycraft:block/net_pole",
+        "particle": "volleycraft:block/net_pole"
+    },
+    "elements": [
+        {
+            "from": [6, 0, 6],
+            "to":   [10, 16, 10],
+            "faces": {
+                "north": { "texture": "#pole", "uv": [6, 0, 10, 16] },
+                "south": { "texture": "#pole", "uv": [6, 0, 10, 16] },
+                "east":  { "texture": "#pole", "uv": [6, 0, 10, 16] },
+                "west":  { "texture": "#pole", "uv": [6, 0, 10, 16] },
+                "up":    { "texture": "#pole", "uv": [6, 6, 10, 10] },
+                "down":  { "texture": "#pole", "uv": [6, 6, 10, 10] }
+            }
+        }
+    ]
+}
