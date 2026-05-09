@@ -28,7 +28,6 @@ public class VolleyballItem extends Item {
                 0.5 + player.getLookAngle().y * 0.3,
                 player.getLookAngle().z * power
             );
-            ball.setOwner(player);
             level.addFreshEntity(ball);
 
             if (!player.getAbilities().instabuild) {
