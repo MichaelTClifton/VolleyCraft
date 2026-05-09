@@ -5,9 +5,13 @@ import com.volleycraft.multiblock.CourtDetector;
 import com.volleycraft.registry.ModBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
@@ -65,6 +69,33 @@ public class NetPoleBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntityTypes.NET_POLE.get(),
             NetPoleBlockEntity::tick);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        if (!(level.getBlockEntity(pos) instanceof NetPoleBlockEntity be)) {
+            return InteractionResult.PASS;
+        }
+
+        if (!be.isPartOfCourt()) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "[VolleyCraft] No court formed. Place two poles facing the same direction, 3-14 blocks apart."));
+            return InteractionResult.SUCCESS;
+        }
+
+        java.util.UUID courtId = be.getCourtId();
+        com.volleycraft.game.VolleyballGameManager mgr = com.volleycraft.game.VolleyballGameManager.getInstance();
+        mgr.addPlayerToCourt(courtId, (net.minecraft.server.level.ServerPlayer) player);
+
+        com.volleycraft.game.VolleyballGame game = mgr.getGame(courtId);
+        if (game != null && game.getPhase() == com.volleycraft.game.GamePhase.SERVING) {
+            mgr.spawnBall((net.minecraft.server.level.ServerLevel) level, courtId);
+        }
+
+        return InteractionResult.SUCCESS;
     }
 
     @Override
